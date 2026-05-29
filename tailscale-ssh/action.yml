@@ -1,0 +1,104 @@
+name: tailscale-ssh
+description: Join a Tailscale tailnet, SSH to a node, and optionally sync files or run a command.
+
+inputs:
+  tailscale-oauth-client-id:
+    description: Tailscale OAuth client ID.
+    required: true
+  tailscale-oauth-secret:
+    description: Tailscale OAuth client secret.
+    required: true
+  tailscale-tags:
+    description: ACL tags for the ephemeral CI node (e.g. tag:github).
+    required: true
+  ssh-host:
+    description: Target node MagicDNS name or Tailscale IP.
+    required: true
+  ssh-user:
+    description: SSH user on the target node.
+    required: true
+  ssh-private-key:
+    description: SSH private key authorized on the target node.
+    required: true
+  app-name:
+    description: Remote dir under $HOME for files/.env and the command working dir. Required when 'files' or 'env' is set.
+    required: false
+    default: ""
+  files:
+    description: Newline-separated local files/globs to copy into the remote app dir.
+    required: false
+    default: ""
+  env:
+    description: Multiline KEY=VALUE blob written to <app-dir>/.env on the node (umask 077).
+    required: false
+    default: ""
+  command:
+    description: Command to run on the node. Runs inside the app dir when app-name is set.
+    required: false
+    default: 'echo "OK"'
+
+runs:
+  using: composite
+  steps:
+    - name: Connect to Tailscale
+      uses: tailscale/github-action@v4
+      with:
+        oauth-client-id: ${{ inputs.tailscale-oauth-client-id }}
+        oauth-secret: ${{ inputs.tailscale-oauth-secret }}
+        tags: ${{ inputs.tailscale-tags }}
+
+    - name: Setup SSH
+      shell: bash
+      env:
+        SSH_KEY: ${{ inputs.ssh-private-key }}
+        SSH_HOST: ${{ inputs.ssh-host }}
+      run: |
+        mkdir -p ~/.ssh
+        printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+    - name: Sync files
+      if: ${{ inputs.files != '' }}
+      shell: bash
+      env:
+        REMOTE: ${{ inputs.ssh-user }}@${{ inputs.ssh-host }}
+        APP_NAME: ${{ inputs.app-name }}
+        FILES: ${{ inputs.files }}
+      run: |
+        if [ -z "$APP_NAME" ]; then
+          echo "::error::'app-name' is required when 'files' is set"; exit 1
+        fi
+        ssh "$REMOTE" "mkdir -p ~/$APP_NAME"
+        while IFS= read -r f; do
+          [ -z "$f" ] && continue
+          scp $f "$REMOTE:~/$APP_NAME/"
+        done <<< "$FILES"
+
+    - name: Write .env
+      if: ${{ inputs.env != '' }}
+      shell: bash
+      env:
+        REMOTE: ${{ inputs.ssh-user }}@${{ inputs.ssh-host }}
+        APP_NAME: ${{ inputs.app-name }}
+        ENV_CONTENT: ${{ inputs.env }}
+      run: |
+        if [ -z "$APP_NAME" ]; then
+          echo "::error::'app-name' is required when 'env' is set"; exit 1
+        fi
+        ssh "$REMOTE" "mkdir -p ~/$APP_NAME"
+        printf '%s\n' "$ENV_CONTENT" | ssh "$REMOTE" "umask 077 && cat > ~/$APP_NAME/.env"
+
+    - name: Run command
+      if: ${{ inputs.command != '' }}
+      shell: bash
+      env:
+        REMOTE: ${{ inputs.ssh-user }}@${{ inputs.ssh-host }}
+        APP_NAME: ${{ inputs.app-name }}
+        COMMAND: ${{ inputs.command }}
+      run: |
+        if [ -n "$APP_NAME" ]; then
+          ssh "$REMOTE" "cd ~/$APP_NAME && $COMMAND"
+        else
+          ssh "$REMOTE" "$COMMAND"
+        fi
