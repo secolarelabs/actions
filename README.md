@@ -1,6 +1,6 @@
 # actions
 
-Reusable GitHub composite actions for secolarelabs projects.
+Reusable GitHub composite actions for secolarelabs projects
 
 | Action | Description |
 |---|---|

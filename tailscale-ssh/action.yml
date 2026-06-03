@@ -1,39 +1,39 @@
 name: tailscale-ssh
-description: Join a Tailscale tailnet, SSH to a node, and optionally sync files or run a command.
+description: Join a Tailscale tailnet, SSH to a node, and optionally sync files or run a command
 
 inputs:
   tailscale-oauth-client-id:
-    description: Tailscale OAuth client ID.
+    description: Tailscale OAuth client ID
     required: true
   tailscale-oauth-secret:
-    description: Tailscale OAuth client secret.
+    description: Tailscale OAuth client secret
     required: true
   tailscale-tags:
-    description: ACL tags for the ephemeral CI node (e.g. tag:github).
+    description: ACL tags for the ephemeral CI node (e.g. tag:github)
     required: true
   ssh-host:
-    description: Target node MagicDNS name or Tailscale IP.
+    description: Target node MagicDNS name or Tailscale IP
     required: true
   ssh-user:
-    description: SSH user on the target node.
+    description: SSH user on the target node
     required: true
   ssh-private-key:
-    description: SSH private key authorized on the target node.
+    description: SSH private key authorized on the target node
     required: true
   app-name:
-    description: Remote dir under $HOME for files/.env and the command working dir. Required when 'files' or 'env' is set.
+    description: Remote dir under $HOME for files/.env and the command working dir. Required when 'files' or 'env' is set
     required: false
     default: ""
   files:
-    description: Newline-separated local files/globs to copy into the remote app dir.
+    description: Newline-separated local files/globs to copy into the remote app dir
     required: false
     default: ""
   env:
-    description: Multiline KEY=VALUE blob written to <app-dir>/.env on the node (umask 077).
+    description: Multiline KEY=VALUE blob written to <app-dir>/.env on the node (umask 077)
     required: false
     default: ""
   command:
-    description: Command to run on the node. Runs inside the app dir when app-name is set.
+    description: Command to run on the node. Runs inside the app dir when app-name is set
     required: false
     default: 'echo "OK"'
 

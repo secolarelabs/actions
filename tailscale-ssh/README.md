@@ -1,7 +1,6 @@
 # tailscale-ssh
 
-Composite action: join a Tailscale tailnet, SSH to a node, and optionally sync
-files or run a command.
+Composite action: join a Tailscale tailnet, SSH to a node, and optionally sync files or run a command
 
 ## Usage
 
@@ -9,10 +8,10 @@ files or run a command.
 - uses: secolarelabs/actions/tailscale-ssh@v1
   with:
     tailscale-oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-    tailscale-oauth-secret:    ${{ secrets.TAILSCALE_OAUTH_SECRET }}
-    tailscale-tags:            tag:github
-    ssh-host:        my-node
-    ssh-user:        deploy
+    tailscale-oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+    tailscale-tags: tag:github
+    ssh-host: my-node
+    ssh-user: deploy
     ssh-private-key: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
     app-name: demo
     env: |
@@ -20,8 +19,7 @@ files or run a command.
     command: source ./.env && echo "$MY_KEY"
 ```
 
-With no `files`, `env`, or `command`, the action just joins the tailnet, opens
-SSH, and runs the default `echo "OK"` — a connectivity check.
+With no `files`, `env`, or `command`, the action just joins the tailnet, opens SSH, and runs the default `echo "OK"` — a connectivity check
 
 ## Inputs
 
@@ -35,5 +33,5 @@ SSH, and runs the default `echo "OK"` — a connectivity check.
 | `ssh-private-key` | yes | — | SSH private key |
 | `app-name` | no | — | Remote dir; required if `files`/`env` set |
 | `files` | no | — | Newline list of files/globs to copy |
-| `env` | no | — | Multiline blob → remote `.env` (umask 077) |
+| `env` | no | — | Multiline blob: remote `.env` (umask 077) |
 | `command` | no | `echo "OK"` | Command to run (in app dir if `app-name` set) |
