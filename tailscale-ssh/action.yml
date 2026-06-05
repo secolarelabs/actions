@@ -24,6 +24,10 @@ inputs:
     description: Remote dir under $HOME for files/.env and the command working dir. Required when 'files' or 'env' is set
     required: false
     default: ""
+  pre-command:
+    description: Command to run on the node before syncing files (e.g. clear files a container re-owned). Runs in the app dir when app-name is set
+    required: false
+    default: ""
   files:
     description: Newline-separated local files/globs to copy into the remote app dir
     required: false
@@ -57,6 +61,20 @@ runs:
         printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
         ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+    - name: Pre-sync command
+      if: ${{ inputs.pre-command != '' }}
+      shell: bash
+      env:
+        REMOTE: ${{ inputs.ssh-user }}@${{ inputs.ssh-host }}
+        APP_NAME: ${{ inputs.app-name }}
+        PRE_COMMAND: ${{ inputs.pre-command }}
+      run: |
+        if [ -n "$APP_NAME" ]; then
+          ssh "$REMOTE" "mkdir -p ~/$APP_NAME && cd ~/$APP_NAME && $PRE_COMMAND"
+        else
+          ssh "$REMOTE" "$PRE_COMMAND"
+        fi
 
     - name: Sync files
       if: ${{ inputs.files != '' }}
